@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YDS Studio V5 (Detailed Prompts)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .mobile-sidebar { transition: transform 0.3s ease-in-out; }
+        .sidebar-hidden { transform: translateX(-100%); }
+        .sidebar-visible { transform: translateX(0); }
+        optgroup { color: #4f46e5; font-weight: bold; }
+        option { color: #1e293b; font-weight: normal; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-[100dvh] flex flex-col overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="bg-indigo-900 text-white h-14 flex-none flex items-center justify-between px-4 shadow-lg z-30">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="lg:hidden text-white p-2 focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            <h1 class="font-bold text-lg tracking-wide flex items-center gap-2">
+                <i class="fa-solid fa-brain text-yellow-400"></i>
+                <span class="hidden xs:inline">YDS Studio V5</span>
+                <span class="xs:hidden">YDS V5</span>
+            </h1>
+        </div>
+        <div class="flex items-center gap-3">
+             <button onclick="openPromptModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full flex items-center gap-2 transition shadow-lg border border-emerald-400 group">
+                <i class="fa-solid fa-wand-magic-sparkles group-hover:rotate-12 transition"></i>
+                <span class="hidden sm:inline">AI Prompt Oluştur</span>
+                <span class="sm:hidden">Prompt</span>
+             </button>
+        </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="flex flex-1 overflow-hidden relative">
+
+        <!-- SIDEBAR (150 TOPICS) -->
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
+        <aside id="sidebar" class="mobile-sidebar sidebar-hidden lg:sidebar-visible fixed lg:relative z-50 w-72 h-full bg-white border-r border-gray-200 flex flex-col shadow-xl lg:shadow-none lg:transform-none">
+            <div class="p-3 border-b border-gray-100 bg-gray-50 flex-none">
+                <div class="relative mb-2">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                    <input type="text" id="topicSearch" placeholder="150 Konu içinde ara..." class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded focus:border-indigo-500 focus:outline-none">
+                </div>
+                <div class="flex gap-1">
+                    <button onclick="filterTopics('all')" class="flex-1 py-1 text-[10px] font-bold bg-gray-200 hover:bg-gray-300 rounded text-gray-700">TÜMÜ</button>
+                    <button onclick="filterTopics('fen')" class="flex-1 py-1 text-[10px] font-bold bg-emerald-100 hover:bg-emerald-200 rounded text-emerald-800">FEN</button>
+                    <button onclick="filterTopics('saglik')" class="flex-1 py-1 text-[10px] font-bold bg-rose-100 hover:bg-rose-200 rounded text-rose-800">SAĞLIK</button>
+                    <button onclick="filterTopics('sosyal')" class="flex-1 py-1 text-[10px] font-bold bg-amber-100 hover:bg-amber-200 rounded text-amber-800">SOSYAL</button>
+                </div>
+            </div>
+            <div id="topicList" class="flex-1 overflow-y-auto p-2 space-y-1 pb-20 lg:pb-2"></div>
+            <div class="p-2 bg-slate-50 border-t border-slate-200 text-[10px] text-center text-slate-400 lg:block hidden">
+                Toplam 150 Konu Başlığı
+            </div>
+        </aside>
+
+        <!-- MAIN EDITOR -->
+        <main class="flex-1 flex flex-col bg-slate-100 w-full relative">
+            <div class="bg-white p-2 md:p-3 border-b border-gray-200 shadow-sm flex flex-col sm:flex-row gap-2 items-center flex-none z-10">
+                <div class="w-full sm:flex-1">
+                    <select id="typeSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded focus:ring-indigo-500 focus:border-indigo-500 block p-2 font-medium cursor-pointer"></select>
+                </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button onclick="copyText()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm transition"><i class="fa-regular fa-copy"></i></button>
+                    <button onclick="clearText()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded text-sm transition"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+
+            <div id="activeTopicBar" class="hidden bg-indigo-50 border-b border-indigo-100 px-4 py-2 text-xs text-indigo-800 flex justify-between items-center flex-none">
+                <span class="truncate pr-4"><i class="fa-solid fa-bullseye mr-1 text-indigo-500"></i> Hedef: <span id="activeTopicText" class="font-bold">...</span></span>
+                <button onclick="resetTopic()" class="text-indigo-400 hover:text-red-500 flex-none"><i class="fa-solid fa-times"></i></button>
+            </div>
+
+            <div class="flex-1 p-2 md:p-6 overflow-hidden flex justify-center">
+                <div class="w-full max-w-4xl bg-white shadow-sm rounded-lg border border-gray-200 h-full flex flex-col relative">
+                    <textarea id="editor" class="flex-1 w-full p-6 text-lg leading-relaxed text-slate-800 resize-none focus:outline-none font-serif rounded-lg placeholder-slate-300" placeholder="Sorunuzu buraya yazın..."></textarea>
+                </div>
+            </div>
+
+            <div class="bg-white border-t border-gray-200 p-2 grid grid-cols-4 gap-2 text-center flex-none safe-pb shadow-md z-20">
+                <div class="bg-slate-50 rounded p-1 border border-slate-100"><div class="text-[9px] text-slate-400 font-bold uppercase">KELİME</div><div id="statWord" class="text-lg font-bold text-indigo-900">0</div></div>
+                <div class="bg-slate-50 rounded p-1 border border-slate-100"><div class="text-[9px] text-slate-400 font-bold uppercase">HEDEF</div><div id="statRange" class="text-xs font-mono text-slate-600 font-semibold mt-1">--</div></div>
+                <div id="statusBox" class="bg-slate-50 rounded p-1 border border-slate-100 flex flex-col justify-center items-center"><div class="text-[9px] text-slate-400 font-bold uppercase">DURUM</div><div id="statStatus" class="text-xs font-bold text-slate-500">Boş</div></div>
+                <div class="bg-slate-50 rounded p-1 border border-slate-100"><div class="text-[9px] text-slate-400 font-bold uppercase">ZORLUK</div><div id="statComplex" class="text-xs font-bold text-slate-600 mt-1">--</div></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- PROMPT MODAL -->
+    <div id="promptModal" class="fixed inset-0 bg-black/70 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-indigo-50 rounded-t-xl">
+                <div>
+                    <h3 class="font-bold text-indigo-900 flex items-center gap-2"><i class="fa-solid fa-robot text-indigo-500"></i> AI Prompt Sihirbazı</h3>
+                    <p class="text-[10px] text-indigo-400 mt-0.5">ChatGPT, Claude veya Gemini için hazır komut</p>
+                </div>
+                <button onclick="closePromptModal()" class="text-gray-400 hover:text-gray-700"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto bg-slate-50 flex-1">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase">KONU</label><div id="modalTopic" class="text-sm font-semibold truncate bg-white p-2 border rounded">...</div></div>
+                    <div><label class="block text-[10px] font-bold text-slate-400 uppercase">TÜR</label><div id="modalType" class="text-sm font-semibold truncate bg-white p-2 border rounded">...</div></div>
+                </div>
+                <label class="block text-xs font-bold text-emerald-600 mb-2 uppercase">Detaylı Prompt Metni (İngilizce)</label>
+                <div class="relative group h-64">
+                    <textarea id="generatedPrompt" class="w-full h-full p-4 text-xs md:text-sm font-mono text-slate-700 bg-white border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none resize-none shadow-inner" readonly></textarea>
+                    <button onclick="copyPrompt()" class="absolute top-3 right-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs px-3 py-1.5 rounded font-bold transition flex items-center gap-1 shadow-sm"><i class="fa-regular fa-copy"></i> Kopyala</button>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-100 bg-white rounded-b-xl flex justify-end"><button onclick="closePromptModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2 rounded text-sm font-medium">Kapat</button></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-800 text-white px-5 py-3 rounded-lg shadow-xl opacity-0 pointer-events-none transition-opacity z-[70] flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> <span id="toastMsg">Kopyalandı!</span></div>
+
+    <script>
+        // --- 1. DETAILED PROMPT TEMPLATES (THE "OLD" STRUCTURE) ---
+        const promptTemplates = {
+            // KELİME SORULARI
+            "vocab": `Act as a professional exam writer for the YDS (Foreign Language Exam in Turkey).
+Create a challenging multiple-choice vocabulary question.
+
+TARGET: A high-level academic {subType} (C1 level).
+TOPIC: {topic}.
+
+CONTEXT REQUIREMENTS:
+1. The sentence must be academic, formal, and scientifically/socially dense (approx. 30-50 words).
+2. It should contain context clues (collocations, definitions, or contrast signals) that point specifically to the correct answer.
+3. The sentence structure should involve relative clauses or particulate phrases to increase difficulty.
+
+OPTIONS:
+1. Provide 5 options (A, B, C, D, E).
+2. The correct answer must be an academic word commonly found in journals (e.g., if verb: implement, fluctuate, eradicate).
+3. Distractors must be of the same part of speech and difficulty level (C1), but contextually incorrect.
+4. Avoid simple words. Use "Academic Word List" (AWL) candidates.
+
+OUTPUT FORMAT:
+- The Question Sentence (with a blank).
+- The Options.
+- Correct Answer.
+- Brief explanation in Turkish why the answer fits the context.`,
+
+            // GRAMER SORULARI
+            "grammar": `Act as an expert YDS question writer.
+Create a grammar question focusing on {subType}.
+TOPIC: {topic}.
+
+REQUIREMENTS:
+1. The sentence must be compound-complex (25-45 words).
+2. It must be strictly academic tone (Science or Social Science).
+
+SPECIFIC INSTRUCTIONS FOR {subType}:
+- If Tense: Include specific time markers (e.g., "Since the 19th century", "By the time...") that dictate the answer. Mix Passive Voice into the options.
+- If Preposition: Focus on dependent prepositions (verb+prep, adj+prep) or abstract spatial/temporal meanings.
+- If Connectors/Transition Words: The logic must be clear but complex (Contrast, Concession, Cause-Effect). Example: "Although X is true, Y happens."
+- If Relative/Noun Clause: Test the distinction between 'which', 'that', 'what', 'in which'.
+
+OUTPUT:
+- Question Sentence.
+- 5 Options (A-E).
+- Correct Answer & Turkish Logical Explanation.`,
+
+            // CLOZE TEST
+            "cloze": `Create a "Cloze Test" passage suitable for YDS.
+TOPIC: {topic}.
+LENGTH: 140-170 words.
+
+STRUCTURE:
+1. Write a coherent, dense, academic paragraph.
+2. Mark 5 blanks in the text numbered as [1], [2], [3], [4], [5].
+3. The blanks should strictly test the following in order:
+   - Q1: A Preposition (e.g., in terms of, associated with).
+   - Q2: A specific Vocabulary item (Noun or Verb).
+   - Q3: A Connector/Linking Word (e.g., However, Therefore, Moreover).
+   - Q4: A Grammar structure (Tense, Passive, or Gerund/Infinitive).
+   - Q5: A Phrasal Verb or Adjective.
+
+OPTIONS:
+- For each blank, provide 5 options (A-E).
+- Distractors must be strong (C1 level).
+
+OUTPUT:
+- The Full Paragraph with blanks.
+- The 5 Questions with options.
+- Answer Key with brief explanations.`,
+
+            // OKUMA PARÇASI
+            "reading": `Create a "Reading Comprehension" passage for YDS.
+TOPIC: {topic}.
+LENGTH: 250-350 words.
+TONE: Highly academic, objective, dense (similar to Scientific American, The Economist, or History Today).
+
+CONTENT:
+- The text should present a complex argument, a historical development, or a scientific phenomenon.
+- Use advanced vocabulary and complex sentence structures (inversions, participial phrases).
+
+QUESTIONS:
+Create 3-4 multiple choice questions based on the text:
+1. One "Main Idea" or "Best Title" question.
+2. One "Specific Detail" or "According to the passage" question (requires finding a synonym/paraphrase in the text).
+3. One "Inference" question (It can be inferred from the passage that...).
+4. (Optional) One "Reference" question (The word 'they' in line X refers to...).
+
+OPTIONS:
+- Options must be long and tricky.
+- Distractors should use words from the text but distort the meaning (Overgeneralization, False Causality).`,
+
+            // CÜMLE TAMAMLAMA
+            "sentence_compl": `Create a "Sentence Completion" question for YDS.
+TOPIC: {topic}.
+
+TASK:
+Provide EITHER the first half OR the second half of a complex sentence.
+- If giving the first half: End with a connector (e.g., "Although the results were promising,...").
+- If giving the second half: Start with a lowercase letter (e.g., "...; however, they failed to secure funding.").
+
+REQUIREMENTS:
+1. The completed sentence must be logically sound and grammatically strictly correct.
+2. The semantic link between the two parts should be based on: Contrast, Cause-Effect, or Concession.
+3. Provide 5 options (A-E) that are full clauses.
+4. Distractors must look grammatically possible (correct tense) but fail on LOGIC or REFERENCE (e.g., 'he' vs 'they' mismatch).
+
+OUTPUT:
+- The Stem.
+- 5 Options.
+- Correct Answer & Logic Explanation.`,
+
+            // ÇEVİRİ
+            "translation": `Create a "Translation" question for YDS.
+TYPE: {subType} (e.g., English to Turkish).
+TOPIC: {topic}.
+
+TASK:
+1. Write a complex source sentence (35-50 words).
+   - Must contain: A relative clause, a passive voice, and a connector.
+2. Provide the correct translation which captures the exact meaning, emphasis, and tone.
+3. Provide 4 distractors that are very similar but have specific errors:
+   - Wrong Subject/Object position.
+   - Wrong Tense.
+   - Missing Adjective/Adverb.
+   - Wrong Emphasis (Active vs Passive translation).
+
+OUTPUT:
+- Source Sentence.
+- 5 Options.
+- Correct Answer.`,
+
+            // DİYALOG
+            "dialogue": `Create a "Dialogue Completion" question for YDS.
+TOPIC: {topic}.
+CONTEXT: Two academic colleagues or a professor and a student discussing the topic.
+
+STRUCTURE:
+Speaker A: (Sets the context, 1-2 sentences. Complex idea.)
+Speaker B: (Blank space)
+Speaker A: (Responds to B, providing a clue/reaction to what B must have said. e.g., "That's true, but we must also consider...")
+
+OPTIONS:
+- Provide 5 options for the blank.
+- The correct answer must bridge the gap logically and tonally.
+- Distractors might be on-topic but disrupt the flow of the conversation (irrelevant detail or wrong attitude).`,
+
+            // İLGİSİZ CÜMLE
+            "irrelevant": `Create an "Irrelevant Sentence" question for YDS.
+TOPIC: {topic}.
+
+TASK:
+Write a paragraph of 5 numbered sentences (I, II, III, IV, V).
+1. Four of the sentences must form a coherent paragraph about {topic}.
+2. One sentence (e.g., III or IV) must be off-topic, shift the focus significantly, or break the flow of the argument.
+3. The irrelevance should be subtle (e.g., switching from specific to general, or changing the time period unexpectedly).
+
+OUTPUT:
+- The 5 Sentences.
+- The Answer Key (which number is irrelevant and why).`
+        };
+
+        // --- 2. 150 TOPICS (V4 DATABASE) ---
+        const topics = {
+            "fen": {
+                color: "text-emerald-700 bg-emerald-50 hover:bg-emerald-100",
+                list: [
+                    "3D Printing Technology", "Acid Rain & Effects", "Agricultural Technology", "Alternative Fuels", "Artificial Intelligence (AI)", 
+                    "Astronomy & Black Holes", "Augmented Reality (AR)", "Autonomous Vehicles", "Big Data Analytics", "Biodiversity & Extinction", 
+                    "Biofuels", "Biological Clocks", "Biometrics", "Biotechnology", "Carbon Footprint", 
+                    "Climate Change", "Cloud Computing", "Coral Reef Bleaching", "Cybersecurity", "Dark Matter", 
+                    "Deep Sea Exploration", "Deforestation", "Desalination", "Drones", "Earthquake Engineering", 
+                    "Electric Batteries", "Endangered Species", "Evolutionary Biology", "Fossil Fuels", "Genetic Engineering (CRISPR)", 
+                    "Geothermal Energy", "Global Warming", "Greenhouse Effect", "Hydroponic Farming", "Industrial Robotics", 
+                    "Internet of Things (IoT)", "Invasive Species", "Machine Learning", "Marine Biology", "Mars Colonization", 
+                    "Meteorology", "Microplastics", "Nanotechnology", "Nuclear Fusion", "Ocean Acidification", 
+                    "Photosynthesis", "Plate Tectonics", "Quantum Computing", "Renewable Energy", "Smart Cities", 
+                    "Space Debris", "Stem Cell Research", "Superconductors", "Sustainable Architecture", "Virtual Reality (VR)", 
+                    "Volcanic Eruptions", "Water Scarcity", "Wearable Technology", "Wildlife Conservation", "Wind Turbines"
+                ].sort()
+            },
+            "saglik": {
+                color: "text-rose-700 bg-rose-50 hover:bg-rose-100",
+                list: [
+                    "Acupuncture", "Addiction & Recovery", "Aging & Longevity", "Allergies", "Alzheimer's Disease", 
+                    "Antibiotic Resistance", "Anxiety Disorders", "Autism Spectrum", "Autoimmune Diseases", "Meditation Benefits", 
+                    "Bipolar Disorder", "Cancer Immunotherapy", "Cardiovascular Health", "Childhood Obesity", "Chronic Fatigue", 
+                    "CBT Therapy", "COVID-19 Pandemic", "Dementia Care", "Dental Hygiene", "Depression Treatments", 
+                    "Diabetes", "Dietary Supplements", "Eating Disorders", "Caffeine Effects", "Smoking Effects", 
+                    "Epidemiology", "Gene Therapy", "Malnutrition", "Gut Microbiome", "Heart Attacks", 
+                    "High Blood Pressure", "Homeopathy Debate", "Human Genome", "Hypertension", "Immune System", 
+                    "Infectious Diseases", "Insomnia", "Medical Ethics", "Mental Health", "Migraines", 
+                    "MRI Imaging", "Neurological Disorders", "Nutrition", "Obesity Epidemic", "Occupational Therapy", 
+                    "Organ Transplantation", "Pain Management", "Pandemics", "Physical Exercise", "Placebo Effect", 
+                    "PTSD", "Probiotics", "Public Health", "Seasonal Affective Disorder", "Sedentary Lifestyle", 
+                    "Skin Cancer", "Sleep Apnea", "Stem Cell Therapy", "Telemedicine", "Vaccination"
+                ].sort()
+            },
+            "sosyal": {
+                color: "text-amber-700 bg-amber-50 hover:bg-amber-100",
+                list: [
+                    "Ancient Civilizations", "Ancient Egypt", "Anthropology", "Archaeology", "Art History", 
+                    "Child Psychology", "Cognitive Development", "Cold War", "Colonialism", "Consumer Behavior", 
+                    "Cultural Heritage", "Democracy", "Digital Nomadism", "Diplomacy", "Distance Learning", 
+                    "E-Commerce", "Inflation", "Education Systems", "Emerging Markets", "AI Ethics", 
+                    "Feminism", "French Revolution", "Gig Economy", "Supply Chains", "Globalization", 
+                    "Cinema History", "Human Rights", "Immigration", "Industrial Revolution", "Intellectual Property", 
+                    "International Law", "International Relations", "Language Acquisition", "Linguistics", "Mass Media", 
+                    "Media Literacy", "Migration Crisis", "Modern Art", "Multiculturalism", "Philosophy of Science", 
+                    "Political Polarization", "Pop Culture", "Poverty", "Psychology of Happiness", "Learning Psychology", 
+                    "Refugee Integration", "Remote Work", "Renaissance", "Roman Empire", "Social Media", 
+                    "Social Stratification", "Sociology of Family", "Sustainable Tourism", "European Union", "Great Depression", 
+                    "United Nations", "Tourism Industry", "Urban Planning", "Urbanization", "World Wars"
+                ].sort()
+            }
+        };
+
+        // --- 3. QUESTION TYPES MAPPING ---
+        // Maps dropdown selection to Prompt Template Key
+        const questions = {
+            "GRAMER (İLK 16)": [
+                {id: "noun", label: "İsim (Noun)", type: "vocab"}, 
+                {id: "verb", label: "Fiil (Verb)", type: "vocab"},
+                {id: "adj", label: "Sıfat (Adjective)", type: "vocab"}, 
+                {id: "adv", label: "Zarf (Adverb)", type: "vocab"},
+                {id: "phrasal", label: "Phrasal Verb", type: "vocab"}, 
+                {id: "prep", label: "Edat (Preposition)", type: "grammar"},
+                {id: "tense", label: "Tense / Zaman", type: "grammar"}, 
+                {id: "conn", label: "Bağlaç (Connector)", type: "grammar"},
+                {id: "rel", label: "Relative Clause", type: "grammar"}, 
+                {id: "nouncl", label: "Noun Clause", type: "grammar"}
+            ],
+            "OKUMA & KELİME": [
+                {id: "cloze", label: "Cloze Test", type: "cloze"}, 
+                {id: "reading", label: "Reading (Paragraf)", type: "reading"},
+                {id: "sent", label: "Cümle Tamamlama", type: "sentence_compl"}
+            ],
+            "DİĞER BECERİLER": [
+                {id: "eng_tr", label: "İngilizce → Türkçe", type: "translation"}, 
+                {id: "tr_eng", label: "Türkçe → İngilizce", type: "translation"},
+                {id: "dial", label: "Diyalog", type: "dialogue"}, 
+                {id: "irr", label: "İlgisiz Cümle", type: "irrelevant"},
+                {id: "rest", label: "Yakın Anlam", type: "translation"}
+            ]
+        };
+
+        // DOM Elements
+        const els = {
+            sidebar: document.getElementById('sidebar'), topicList: document.getElementById('topicList'),
+            typeSelect: document.getElementById('typeSelect'), editor: document.getElementById('editor'),
+            topicSearch: document.getElementById('topicSearch'), promptModal: document.getElementById('promptModal'),
+            generatedPrompt: document.getElementById('generatedPrompt'), modalTopic: document.getElementById('modalTopic'),
+            modalType: document.getElementById('modalType'), activeTopicBar: document.getElementById('activeTopicBar'),
+            activeTopicText: document.getElementById('activeTopicText'), statWord: document.getElementById('statWord'),
+            statRange: document.getElementById('statRange'), statStatus: document.getElementById('statStatus'),
+            statComplex: document.getElementById('statComplex'), toast: document.getElementById('toast')
+        };
+
+        let state = { topic: null, type: null, filter: 'all' };
+
+        // --- INIT & RENDER ---
+        function init() {
+            // Populate Select Menu
+            els.typeSelect.innerHTML = "";
+            for(const [grp, items] of Object.entries(questions)) {
+                let g = document.createElement('optgroup'); g.label = grp;
+                items.forEach(i => {
+                    let o = document.createElement('option'); o.value = JSON.stringify(i); o.textContent = i.label;
+                    g.appendChild(o);
+                });
+                els.typeSelect.appendChild(g);
+            }
+            renderTopics();
+            els.typeSelect.addEventListener('change', updateType);
+            els.editor.addEventListener('input', analyze);
+            els.topicSearch.addEventListener('input', (e) => renderTopics(e.target.value));
+            updateType();
+        }
+
+        function renderTopics(search = "") {
+            els.topicList.innerHTML = "";
+            Object.entries(topics).forEach(([key, data]) => {
+                if(state.filter !== 'all' && state.filter !== key) return;
+                const matches = data.list.filter(t => t.toLowerCase().includes(search.toLowerCase()));
+                if(!matches.length) return;
+                
+                let head = document.createElement('div');
+                head.className = `sticky top-0 p-2 text-[10px] font-bold uppercase border-b ${data.color.split(' ')[0]} bg-white z-10`;
+                head.innerHTML = `${key.toUpperCase()} <span class="opacity-50 ml-1">(${matches.length})</span>`;
+                els.topicList.appendChild(head);
+
+                matches.forEach(t => {
+                    let b = document.createElement('button');
+                    b.className = `w-full text-left p-2 text-sm border-b border-gray-50 transition ${data.color.replace('text-', 'hover:text-').replace('bg-', 'hover:bg-')}`;
+                    b.textContent = t;
+                    b.onclick = () => setTopic(t);
+                    els.topicList.appendChild(b);
+                });
+            });
+        }
+
+        function setTopic(t) {
+            state.topic = t;
+            els.activeTopicBar.classList.remove('hidden');
+            els.activeTopicText.textContent = t;
+            if(window.innerWidth < 1024) toggleSidebar();
+        }
+
+        function updateType() {
+            try { state.type = JSON.parse(els.typeSelect.value); analyze(); } catch(e){}
+        }
+
+        // --- PROMPT GENERATION LOGIC ---
+        window.openPromptModal = () => {
+            els.promptModal.classList.remove('hidden');
+            
+            const topicSafe = state.topic || "a specific academic topic (e.g., Climate Change)";
+            const typeSafe = state.type ? state.type.label : "General";
+            const templateKey = state.type ? state.type.type : "vocab";
+            
+            els.modalTopic.textContent = state.topic || "Konu Seçilmedi";
+            els.modalType.textContent = typeSafe;
+            
+            // Get Template
+            let template = promptTemplates[templateKey] || promptTemplates["vocab"];
+            
+            // Replace placeholders
+            let finalPrompt = template
+                .replace(/{topic}/g, topicSafe)
+                .replace(/{subType}/g, typeSafe);
+            
+            els.generatedPrompt.value = finalPrompt;
+        };
+
+        // --- ANALYTICS ---
+        window.analyze = () => {
+            let txt = els.editor.value.trim();
+            let words = txt ? txt.split(/\s+/).length : 0;
+            els.statWord.textContent = words;
+            
+            // Range Logic
+            let min=20, max=50;
+            if(state.type?.type === 'reading') { min=250; max=350; }
+            else if(state.type?.type === 'cloze') { min=120; max=170; }
+            els.statRange.textContent = `${min}-${max}`;
+            
+            let st = "Bekleniyor", clr = "text-slate-400";
+            if(words > 0) {
+                if(words < min) { st="Kısa"; clr="text-amber-500"; }
+                else if(words > max) { st="Uzun"; clr="text-rose-500"; }
+                else { st="İdeal"; clr="text-emerald-600"; }
+            }
+            els.statStatus.innerHTML = `<span class="${clr}">${st}</span>`;
+
+            // Complexity
+            if(words > 10) {
+                let avg = txt.length / words;
+                let sentences = txt.split(/[.!?]+/).length;
+                let avgSent = words / sentences;
+                
+                if(avgSent > 22 || avg > 6.2) els.statComplex.innerHTML = `<span class="text-rose-700">İleri (C1)</span>`;
+                else if(avgSent < 10 && avg < 4.5) els.statComplex.innerHTML = `<span class="text-emerald-600">Basit</span>`;
+                else els.statComplex.innerHTML = `<span class="text-amber-600">Orta</span>`;
+            } else els.statComplex.textContent = "--";
+        }
+
+        // --- UTILS ---
+        window.toggleSidebar = () => {
+            els.sidebar.classList.toggle('sidebar-hidden');
+            els.sidebar.classList.toggle('sidebar-visible');
+            document.getElementById('sidebarOverlay').classList.toggle('hidden');
+        };
+        window.filterTopics = (f) => { state.filter = f; renderTopics(els.topicSearch.value); };
+        window.resetTopic = () => { state.topic = null; els.activeTopicBar.classList.add('hidden'); };
+        window.closePromptModal = () => els.promptModal.classList.add('hidden');
+        window.copyPrompt = () => { els.generatedPrompt.select(); document.execCommand('copy'); showToast("Prompt Kopyalandı"); };
+        window.copyText = () => { els.editor.select(); document.execCommand('copy'); showToast("Metin Kopyalandı"); };
+        window.clearText = () => { if(confirm('Sil?')) els.editor.value=""; analyze(); };
+        function showToast(m) { 
+            document.getElementById('toastMsg').textContent=m; 
+            els.toast.style.opacity='1'; setTimeout(()=>els.toast.style.opacity='0', 2000); 
+        }
+
+        init();
+    </script>
+</body>
+</html>
+
