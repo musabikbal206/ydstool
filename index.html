@@ -126,6 +126,24 @@
     <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-800 text-white px-5 py-3 rounded-lg shadow-xl opacity-0 pointer-events-none transition-opacity z-[70] flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> <span id="toastMsg">Kopyalandı!</span></div>
 
     <script>
+        document.addEventListener("contextmenu", function(event){
+        event.preventDefault();
+        });
+        
+        document.onkeydown = function(e) {
+            if (
+                (e.ctrlKey && e.keyCode === 85) || // Ctrl + U
+                (e.ctrlKey && e.shiftKey && e.keyCode === 73) || // Ctrl + Shift + I
+                (e.ctrlKey && e.shiftKey && e.keyCode === 74) || // Ctrl + Shift + J
+                (e.keyCode === 123) // F12
+            ) {
+                e.preventDefault(); // Crucial: This stops the browser's default action
+                return false;
+            }
+        }
+    </script>
+
+    <script>
         // --- 1. DETAILED PROMPT TEMPLATES (THE "OLD" STRUCTURE) ---
         const promptTemplates = {
             // KELİME SORULARI
